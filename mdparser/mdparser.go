@@ -81,6 +81,16 @@ func InitParser(inp []byte) (p MdParser) {
 	return p
 }
 
+func (p MdParser) Lines () (ls []RLine) {
+	return p.lines
+}
+
+func (p MdParser) LinInfo (l RLine) (start int, end int) {
+	start = l.linSt
+	end = l.linEnd
+	return start, end
+}
+
 func InitParseState(inp []byte) (pstate *MdPState) {
 
 	var mdDoc MdNode
@@ -131,14 +141,16 @@ func  (p *MdParser)ParseUL(ps *MdPState) *MdNode {
 
 	blk := &MdNode{}
 
-	if ps.Node.typ != "UL" {
+	// check whether there is a UL element
+	if ps.Blk.typ != "UL" {
 		blk.typ = "UL"
 		blk.par = ps.Node
 		blk.blkSt= l.linSt
 		blk.blkEnd = -1
-		ps.Node = blk
+		ps.Blk = blk
+
 	} else {
-		blk = ps.Node
+		blk = ps.Blk
 	}
 
 	liblk := &MdNode{
@@ -172,6 +184,7 @@ func  (p *MdParser)ParseUL(ps *MdPState) *MdNode {
 		if !loop {break}
 	}
 	blk.ch = append(blk.ch,liblk)
+	ps.closed = false
 	return blk
 }
 
@@ -322,12 +335,12 @@ func GetLines (inp []byte) (linList []RLine){
 func (p *MdParser)Parse (ps *MdPState) (err error){
 
 	linList := p.lines
+	res:=&MdNode{}
 
 	for i:=0; i< len(linList); i++ {
 		line := linList[i]
 //fmt.Printf("*** Line[%d]: \"%s\"\n", i+1, string(line.lintxt))
 		ps.plin = i
-		res:=&MdNode{}
 		psold := ps.closed
 		tmp := ""
 		if len(line.lintxt) == 0 {
@@ -349,28 +362,31 @@ func (p *MdParser)Parse (ps *MdPState) (err error){
 
 		tmp = "res: " + tmp
 		PrintNode(res, tmp)
-//fmt.Printf("after parse:%q %t\n%v\n", plet, ps.closed,ps)
 
-/*
-		if ps.Blk != nil {
-			if ps.Blk.typ != res.typ && !psold{
-				ps.Node.ch = append(ps.Node.ch, ps.Blk)
-				ps.closed = true
-			}
-		}
-*/
+fmt.Printf("psold: %t psnew: %t\n", psold, ps.closed)
 		if ps.closed && !psold {
-				ps.Node.ch = append(ps.Node.ch, ps.Blk)
+//		PrintNode(ps.Node, "ps.Node")
+			ps.Node.ch = append(ps.Node.ch, ps.Blk)
 		}
 		if ps.closed {
 			ps.Node.ch = append(ps.Node.ch, res)
 		}
 		ps.Blk = res
 
-//fmt.Printf("after res parse %q: %v\np.Blk:%v\n",plet, p, p.Blk)
-//fmt.Printf("[%d]: %t %q\"%s\"\n", i+1, res, plet, string(line.lintxt))
-	}
+/*
+		fmt.Printf("Line[%d]: ", i)
+		var input string
+    	fmt.Scanln(&input)
 
+		tmp = fmt.Sprintf("line: %d", i)
+*/
+//		PrintNode(ps.Node, tmp)
+
+	}
+	if !ps.closed {
+		ps.Node.ch = append(ps.Node.ch, res)
+	}
+	ps.Doc = ps.Node
 	return nil
 }
 
