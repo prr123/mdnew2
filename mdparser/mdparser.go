@@ -350,10 +350,15 @@ fmt.Printf("before parse:%q %t\n%v\n", plet, ps.closed,ps)
 
 		tmp := "res: " + string(plet)
 		PrintNode(res, tmp)
+fmt.Printf("after parse:%q %t\n%v\n", plet, ps.closed,ps)
 		if ps.Blk != nil {
-			if ps.Blk.typ != res.typ {ps.closed = true}
+			if ps.Blk.typ != res.typ {
+				ps.Node.ch = append(ps.Node.ch, res)
+			}
 		}
-		if ps.closed {ps.Node.ch = append(ps.Node.ch, res)}
+		if ps.closed {
+			ps.Node.ch = append(ps.Node.ch, res)
+		}
 		ps.Blk = res
 
 //fmt.Printf("after res parse %q: %v\np.Blk:%v\n",plet, p, p.Blk)
