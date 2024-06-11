@@ -248,7 +248,7 @@ fmt.Printf("not a empty line: %q\n",let)
 
 func (p *MdParser)ParsePar(ps *MdPState) *MdNode{
 	fmt.Println("parsing paragraph")
-fmt.Printf("ps.close: %t\n%v\n",ps.closed, ps)
+//fmt.Printf("ps.close: %t\n%v\n",ps.closed, ps)
 
 	l := p.lines[ps.plin]
 	eoBlk:= false
@@ -294,9 +294,6 @@ func CloseBlk(ps *MdPState) {
 func GetLines (inp []byte) (linList []RLine){
 
 	linSt:=0
-//	linEnd := -1
-//	lineCount := 0
-
 	linList = make([]RLine,0,128)
 
 	for i:=0; i< len(inp); i++ {
@@ -325,36 +322,45 @@ func GetLines (inp []byte) (linList []RLine){
 func (p *MdParser)Parse (ps *MdPState) (err error){
 
 	linList := p.lines
+
 	for i:=0; i< len(linList); i++ {
 		line := linList[i]
 //fmt.Printf("*** Line[%d]: \"%s\"\n", i+1, string(line.lintxt))
 		ps.plin = i
+		res:=&MdNode{}
+		psold := ps.closed
+		tmp := ""
 		if len(line.lintxt) == 0 {
-			res := p.ParseEL(ps)
-			ps.closed = true
-			ps.Node.ch = append(ps.Node.ch, res)
-			ps.Blk = res
-			continue
-		}
-
-		flet := line.lintxt[0]
-		plet := flet
-		if IsAlpha(flet) {plet='p'}
-		f, ok := p.blkMap[plet]
-		if !ok {
-			fmt.Printf("error -- line[%d] first letter unknown: %q\n", i, plet)
-			continue
-		}
-fmt.Printf("before parse:%q %t\n%v\n", plet, ps.closed,ps)
-		res:=f(ps)
-
-		tmp := "res: " + string(plet)
-		PrintNode(res, tmp)
-fmt.Printf("after parse:%q %t\n%v\n", plet, ps.closed,ps)
-		if ps.Blk != nil {
-			if ps.Blk.typ != res.typ {
-				ps.Node.ch = append(ps.Node.ch, res)
+			res = p.ParseEL(ps)
+			tmp = "el"
+		} else {
+			flet := line.lintxt[0]
+			plet := flet
+			if IsAlpha(flet) {plet='p'}
+			f, ok := p.blkMap[plet]
+			if !ok {
+				fmt.Printf("error -- line[%d] first letter unknown: %q\n", i, plet)
+				continue
 			}
+//fmt.Printf("before parse:%q %t\n%v\n", plet, ps.closed,ps)
+			res=f(ps)
+			tmp = string(plet)
+		}
+
+		tmp = "res: " + tmp
+		PrintNode(res, tmp)
+//fmt.Printf("after parse:%q %t\n%v\n", plet, ps.closed,ps)
+
+/*
+		if ps.Blk != nil {
+			if ps.Blk.typ != res.typ && !psold{
+				ps.Node.ch = append(ps.Node.ch, ps.Blk)
+				ps.closed = true
+			}
+		}
+*/
+		if ps.closed && !psold {
+				ps.Node.ch = append(ps.Node.ch, ps.Blk)
 		}
 		if ps.closed {
 			ps.Node.ch = append(ps.Node.ch, res)

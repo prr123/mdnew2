@@ -8,7 +8,7 @@ import (
 
 
 func TestLines(t *testing.T) {
-	tstFilnam := "/home/peter/go/src/goDemo/mdnew/mdFiles/test3A1.md"
+	tstFilnam := "/home/peter/go/src/goDemo/mdnew2/mdFiles/test3A1.md"
 	content, err := os.ReadFile(tstFilnam)
 	if err != nil {
 		t.Error("cannot read test file!")
@@ -36,7 +36,7 @@ func TestLines(t *testing.T) {
 }
 
 func TestPar(t *testing.T) {
-	tstFilnam := "/home/peter/go/src/goDemo/mdnew/mdFiles/testPar.md"
+	tstFilnam := "/home/peter/go/src/goDemo/mdnew2/mdFiles/testPar.md"
 	content, err := os.ReadFile(tstFilnam)
 	if err != nil {
 		t.Error("cannot read testPar file!")
@@ -63,7 +63,7 @@ func TestPar(t *testing.T) {
 
 
 func TestHeadings(t *testing.T) {
-	tstFilnam := "/home/peter/go/src/goDemo/mdnew/mdFiles/testHeadings.md"
+	tstFilnam := "/home/peter/go/src/goDemo/mdnew2/mdFiles/testHeadings.md"
 	content, err := os.ReadFile(tstFilnam)
 	if err != nil {
 		t.Error("cannot read test file!")
@@ -89,7 +89,7 @@ func TestHeadings(t *testing.T) {
 }
 
 func TestUL(t *testing.T) {
-	tstFilnam := "/home/peter/go/src/goDemo/mdnew/mdFiles/testUL.md"
+	tstFilnam := "/home/peter/go/src/goDemo/mdnew2/mdFiles/testUL.md"
 	content, err := os.ReadFile(tstFilnam)
 	if err != nil {t.Error("cannot read test file!")}
 
