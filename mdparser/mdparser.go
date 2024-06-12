@@ -36,7 +36,8 @@ type RLine struct {
 	linSt int
 	linEnd int
 	lintxt []byte
-	indent int
+	indSt int
+	indlev int
 	eolChar int
 }
 
@@ -45,7 +46,7 @@ func PrLines(lines []RLine) {
 	fmt.Println("******* Lines *******")
 	for i:=0; i<len(lines); i++ {
 		l :=lines[i]
-		fmt.Printf("--[%2d]: (%2d %2d %2d %1d) %s\n",i+1, l.linSt, l.linEnd, l.indent, l.eolChar, string(l.lintxt))
+		fmt.Printf("--[%2d]: (%2d %2d %2d %2d %1d) %s\n",i+1, l.linSt, l.linEnd, l.indSt, l.indlev, l.eolChar, string(l.lintxt))
 	}
 	fmt.Println("***** End Lines *****")
 
@@ -93,11 +94,11 @@ func InitParser(inp []byte) (p MdParser) {
 	return p
 }
 
-func (p MdParser) Lines () (ls []RLine) {
+func (p MdParser) Lines() (ls []RLine) {
 	return p.lines
 }
 
-func (p MdParser) LinInfo (l RLine) (start int, end int) {
+func (p MdParser) LinInfo(l RLine) (start int, end int) {
 	start = l.linSt
 	end = l.linEnd
 	return start, end
@@ -335,13 +336,27 @@ func GetLines (inp []byte) (linList []RLine){
 			}
 
 			ind := linSt
+			spCount :=0
+			tbCount :=0
 			for j:=linSt; j<i-1; j++ {
-				if inp[j] != ' ' {
-					ind = j
-					break
+				if inp[j] == ' ' {
+					spCount++
+					continue
 				}
+				if inp[j] == '\t' {
+					tbCount++
+					continue
+				}
+				ind = j
+				break
 			}
-			newLine.indent = ind
+			newLine.indSt = ind
+			if spCount > 0 {
+				newLine.indlev = spCount/4
+			}
+			if tbCount > 0 {
+				newLine.indlev = tbCount
+			}
 			linList = append(linList,newLine)
 			linSt = i+1
 		}
