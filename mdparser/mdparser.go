@@ -36,7 +36,19 @@ type RLine struct {
 	linSt int
 	linEnd int
 	lintxt []byte
+	indent int
 	eolChar int
+}
+
+func PrLines(lines []RLine) {
+
+	fmt.Println("******* Lines *******")
+	for i:=0; i<len(lines); i++ {
+		l :=lines[i]
+		fmt.Printf("--[%2d]: (%2d %2d %2d %1d) %s\n",i+1, l.linSt, l.linEnd, l.indent, l.eolChar, string(l.lintxt))
+	}
+	fmt.Println("***** End Lines *****")
+
 }
 
 func IsAlpha(let byte)(res bool) {
@@ -310,8 +322,7 @@ func GetLines (inp []byte) (linList []RLine){
 	linList = make([]RLine,0,128)
 
 	for i:=0; i< len(inp); i++ {
-		switch inp[i] {
-		case '\n':
+		if inp[i] == '\n' {
 			newLine := RLine {
 				linSt: linSt,
 				linEnd: i,
@@ -322,10 +333,17 @@ func GetLines (inp []byte) (linList []RLine){
 			if i-linSt >2 {
 				if inp[i-2] == ' ' && inp[i-1] == ' ' {newLine.eolChar = 2}
 			}
+
+			ind := linSt
+			for j:=linSt; j<i-1; j++ {
+				if inp[j] != ' ' {
+					ind = j
+					break
+				}
+			}
+			newLine.indent = ind
 			linList = append(linList,newLine)
 			linSt = i+1
-		default:
-
 		}
 	}
 	return linList

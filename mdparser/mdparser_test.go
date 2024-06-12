@@ -6,6 +6,19 @@ import (
 	"fmt"
 )
 
+func TestPrLines(t *testing.T) {
+
+	tstFilnam := "/home/peter/go/src/goDemo/mdnew2/mdFiles/testULNest1.md"
+	content, err := os.ReadFile(tstFilnam)
+	if err != nil {
+		t.Error("cannot read test file!")
+		return
+	}
+	p := InitParser(content)
+	lines := p.lines
+
+	PrLines(lines)
+}
 
 func TestLines(t *testing.T) {
 	tstFilnam := "/home/peter/go/src/goDemo/mdnew2/mdFiles/test3A1.md"
