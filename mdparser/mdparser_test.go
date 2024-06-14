@@ -124,3 +124,26 @@ func TestUL(t *testing.T) {
 	PrintNode(ps.Doc, "doc ul")
 }
 
+func TestULNest1(t *testing.T) {
+	tstFilnam := "/home/peter/go/src/goDemo/mdnew2/mdFiles/testULNest1.md"
+	content, err := os.ReadFile(tstFilnam)
+	if err != nil {t.Error("cannot read test file!")}
+
+	p := InitParser(content)
+	ps := InitParseState(content)
+
+	fmt.Println("****** raw text lines *******")
+	lines := p.lines
+	for i:=0; i<len(lines);i++ {
+		linst := lines[i].linSt
+		linend:= lines[i].linEnd
+		fmt.Printf("[%d]: %s\n", i+1, string(content[linst:linend]))
+	}
+	fmt.Println("**** end raw text lines *****")
+	fmt.Println()
+
+	err = p.Parse(ps)
+	if err != nil {t.Error("cannot parse nd!")}
+	PrintNode(ps.Doc, "doc ul")
+}
+

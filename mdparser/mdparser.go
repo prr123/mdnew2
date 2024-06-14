@@ -6,6 +6,12 @@ import (
 	"fmt"
 )
 
+const (
+	Base = iota
+	List
+	Quote
+)
+
 type MdNode struct {
 	ch []*MdNode
 	par *MdNode
@@ -30,6 +36,8 @@ type MdPState struct {
 	Blk *MdNode // prev block
 	closed bool
 	plin int
+	nest int
+	state int
 }
 
 type RLine struct {
@@ -37,7 +45,7 @@ type RLine struct {
 	linEnd int
 	lintxt []byte
 	indSt int
-	indlev int
+	nest int
 	eolChar int
 }
 
@@ -46,7 +54,7 @@ func PrLines(lines []RLine) {
 	fmt.Println("******* Lines *******")
 	for i:=0; i<len(lines); i++ {
 		l :=lines[i]
-		fmt.Printf("--[%2d]: (%2d %2d %2d %2d %1d) %s\n",i+1, l.linSt, l.linEnd, l.indSt, l.indlev, l.eolChar, string(l.lintxt))
+		fmt.Printf("--[%2d]: (%2d %2d %2d %2d %1d) %s\n",i+1, l.linSt, l.linEnd, l.indSt, l.nest, l.eolChar, string(l.lintxt))
 	}
 	fmt.Println("***** End Lines *****")
 
@@ -118,7 +126,8 @@ func InitParseState(inp []byte) (pstate *MdPState) {
 	ps.Blk = nil
 	ps.Node = &mdDoc
 	ps.closed = true
-
+	ps.nest = 0
+	ps.state = Base
 	return &ps
 }
 
@@ -147,23 +156,44 @@ type MdNode struct {
 */
 
 func  (p *MdParser)ParseUL(ps *MdPState) *MdNode {
-	fmt.Printf("parsing UL\n")
+	fmt.Printf("parsing UL: %d nest: %d\n", ps.state, ps.nest)
 
 	l := p.lines[ps.plin]
-	state:=0
 
+fmt.Printf("line nest: %d\n", l.nest)
 	blk := &MdNode{}
 
 	// check whether there is a UL element
-	if ps.Blk.typ != "UL" {
+	if ps.state != List {
 		blk.typ = "UL"
 		blk.par = ps.Node
 		blk.blkSt= l.linSt
 		blk.blkEnd = -1
 		ps.Blk = blk
-
+		ps.state = List
 	} else {
-		blk = ps.Blk
+		if l.nest > ps.nest {
+			blk.typ = "UL"
+			blk.par = ps.Blk
+			blk.blkSt= l.linSt
+			blk.blkEnd = -1
+			ps.Blk.ch = append(ps.Blk.ch, blk)
+			ps.Blk = blk
+			ps.nest++
+			PrintNode(blk, "nest")
+		}
+		if l.nest == ps.nest {
+//			ps.Blk = blk.par
+			blk = ps.Blk
+//			ps.nest--
+//			PrintNode(blk, "reversion")
+		}
+		if l.nest < ps.nest {
+			ps.Blk = ps.Blk.par
+			blk = ps.Blk
+			ps.nest--
+			PrintNode(blk, "reversion")
+		}
 	}
 
 	liblk := &MdNode{
@@ -173,7 +203,7 @@ func  (p *MdParser)ParseUL(ps *MdPState) *MdNode {
 			blkEnd: -1,
 		}
 
-//	suc := false
+	state:=0
 	loop := true
 	for i:=1; i<len(l.lintxt); i++ {
 		let := l.lintxt[i]
@@ -186,7 +216,6 @@ func  (p *MdParser)ParseUL(ps *MdPState) *MdNode {
 				state = 2
 				liblk.txtSt = i
 				liblk.txt = l.lintxt[i:]
-//				suc = true
 				break
 			}
 		case 2:
@@ -245,6 +274,7 @@ func (p *MdParser)ParseHeading(ps *MdPState) *MdNode{
 		txtSt: txtSt,
 		txt: l.lintxt[txtst:],
 	}
+	ps.state = Base
 	return &blk
 }
 
@@ -265,9 +295,7 @@ fmt.Printf("not a empty line: %q\n",let)
 			return nil
 		}
 	}
-//fmt.Println("adding br")
-//	p.Node.ch = append(p.Node.ch, &blk)
-//	p.Blk = nil
+
 	ps.closed = true
 	return &blk
 }
@@ -304,6 +332,7 @@ func (p *MdParser)ParsePar(ps *MdPState) *MdNode{
 //fmt.Printf("par p return: %v\np.Blk:%v\n", p, p.Blk)
 	ps.closed = false
 	if eoBlk {ps.closed = true}
+	ps.state = Base
 	return blk
 }
 
@@ -322,8 +351,10 @@ func GetLines (inp []byte) (linList []RLine){
 	linSt:=0
 	linList = make([]RLine,0,128)
 
+	txtst := 0
 	for i:=0; i< len(inp); i++ {
 		if inp[i] == '\n' {
+			txtst = 0
 			newLine := RLine {
 				linSt: linSt,
 				linEnd: i,
@@ -352,11 +383,15 @@ func GetLines (inp []byte) (linList []RLine){
 			}
 			newLine.indSt = ind
 			if spCount > 0 {
-				newLine.indlev = spCount/4
+				newLine.nest = spCount/4
+				txtst = spCount
 			}
 			if tbCount > 0 {
-				newLine.indlev = tbCount
+				newLine.nest = tbCount
+				txtst = tbCount
 			}
+			newLine.lintxt = inp[linSt+txtst:i]
+
 			linList = append(linList,newLine)
 			linSt = i+1
 		}
@@ -380,6 +415,7 @@ func (p *MdParser)Parse (ps *MdPState) (err error){
 			res = p.ParseEL(ps)
 			tmp = "el"
 		} else {
+//			if ps.state == List {			}
 			flet := line.lintxt[0]
 			plet := flet
 			if IsAlpha(flet) {plet='p'}
